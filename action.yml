@@ -105,6 +105,7 @@ runs:
       with:
         check-latest: true
         go-version: ${{inputs.go-version}}
+        cache-dependency-path: "**/*.sum"
     - run: go version
       shell: bash
     # Setup and configure NodeJS
