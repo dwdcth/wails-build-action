@@ -58,7 +58,7 @@ inputs:
   deno-version:
     description: "Deno version to use"
     required: false
-    default: "v1.20.x"
+    default: "v1.20.x"        
   sign-macos-app-id:
     description: "MacOS Application Certificate id"
     required: false
@@ -96,6 +96,22 @@ inputs:
     required: false
     default: ''
 
+  package-macos-app:
+    description: "MacOS Application package application"
+    required: false
+    default: 'true'  
+  package-macos-exec:
+    description: "MacOS Application package only executable"
+    required: false
+    default: 'false'
+  package-macos-installer:
+    description: "MacOS Application package installer"
+    required: false
+    default: 'false'
+  package-windows-installer:
+    description: "windows Application package installer"
+    required: false
+    default: 'false'          
 runs:
   using: "composite"
   steps:
@@ -194,19 +210,25 @@ runs:
         echo "Signing Package"
         gon -log-level=info ./build/darwin/gon-sign.json
     - name: Build .app zip file
-      if: runner.os == 'macOS'
+      if: runner.os == 'macOS' && inputs.package-macos-app == 'true'
       working-directory: ${{ inputs.app-working-directory }}
       shell: bash
       run: |
         ditto -c -k ./build/bin/${{inputs.build-name}}.app ./build/bin/${{inputs.build-name}}.app.zip
+    - name: Build execute zip file
+      if: runner.os == 'macOS' && inputs.package-macos-exec == 'true'
+      working-directory: ${{ inputs.app-working-directory }}
+      shell: bash
+      run: |
+        ditto -c -k ./build/bin/${{inputs.build-name}}.app/Contents/MacOS/${{inputs.build-name}} ./build/bin/${{inputs.build-name}}_mac.zip        
     - name: Building Installer
-      if: runner.os == 'macOS' && inputs.sign != 'false' && inputs.sign-macos-installer-id != '' && startsWith(github.ref, 'refs/tags/')
+      if: runner.os == 'macOS' && inputs.sign != 'false' && inputs.sign-macos-installer-id != '' && startsWith(github.ref, 'refs/tags/') && inputs.package-macos-installer == 'true'
       shell: bash
       working-directory: ${{ inputs.app-working-directory }}
       run: |
         productbuild --sign '${{inputs.sign-macos-installer-id}}' --component ./build/bin/${{inputs.build-name}}.app ./build/bin/${{inputs.build-name}}.pkg
     - name: Building Installer
-      if: runner.os == 'macOS' && inputs.sign-macos-installer-id == '' && startsWith(github.ref, 'refs/tags/')
+      if: runner.os == 'macOS' && inputs.sign-macos-installer-id == '' && startsWith(github.ref, 'refs/tags/') && inputs.package-macos-installer == 'true'
       shell: bash
       working-directory: ${{ inputs.app-working-directory }}
       run: |
@@ -222,7 +244,7 @@ runs:
     # Windows signing
     - name: Sign Windows binaries
       shell: powershell
-      if: runner.os == 'Windows' && inputs.sign != 'false' && inputs.sign-windows-cert != ''
+      if: runner.os == 'Windows' && inputs.sign != 'false' && inputs.sign-windows-cert != '' && inputs.package-windows-installer == 'true'
       working-directory: ${{ inputs.app-working-directory }}
       run: |
         echo "Creating certificate file"
