@@ -15,11 +15,11 @@ inputs:
   package:
     description: "Uploads workflow & uploads tag builds to a release"
     required: false
-    default: "true"
+    default: "false"
   nsis:
     description: "Build a Windows Installer"
     required: false
-    default: "true"
+    default: "false"
   build-name:
     description: "The name of the binary file"
     required: true
@@ -111,7 +111,16 @@ inputs:
   package-windows-installer:
     description: "windows Application package installer"
     required: false
-    default: 'false'          
+    default: 'false'
+  custom-wail-flag:
+    description: "custom-wail-flag"
+    required: false
+    default: ''
+  windowsconsole:
+    description: "windowsconsole"
+    required: false
+    default: ''  
+
 runs:
   using: "composite"
   steps:
@@ -157,22 +166,22 @@ runs:
     - name: Build App
       if: inputs.build == 'true' && runner.os == 'macOS'
       working-directory: ${{ inputs.app-working-directory }}
-      run: wails build --platform ${{inputs.build-platform}} -webview2 ${{inputs.wails-build-webview2}} -o ${{inputs.build-name}}
+      run: wails build ${{inputs.custom-wail-flag}} --platform ${{inputs.build-platform}} -webview2 ${{inputs.wails-build-webview2}} -o ${{inputs.build-name}}
       shell: bash
     - name: Build App
       if: inputs.build == 'true' &&  runner.os == 'Linux'
       working-directory: ${{ inputs.app-working-directory }}
-      run: wails build --platform ${{inputs.build-platform}} -webview2 ${{inputs.wails-build-webview2}} -o ${{inputs.build-name}}
+      run: wails build ${{inputs.custom-wail-flag}} --platform ${{inputs.build-platform}} -webview2 ${{inputs.wails-build-webview2}} -o ${{inputs.build-name}}
       shell: bash
     - name: Build Windows App
       if: inputs.build == 'true' && runner.os == 'Windows' && inputs.nsis == 'false'
       working-directory: ${{ inputs.app-working-directory }}
-      run: wails build --platform ${{inputs.build-platform}} -webview2 ${{inputs.wails-build-webview2}} -o ${{inputs.build-name}}
+      run: wails build ${{inputs.custom-wail-flag}} ${{inputs.windowsconsole}} --platform ${{inputs.build-platform}} -webview2 ${{inputs.wails-build-webview2}} -o ${{inputs.build-name}}
       shell: bash
     - name: Build Windows App + Installer
       if: inputs.build == 'true' && runner.os == 'Windows' && inputs.nsis == 'true'
       working-directory: ${{ inputs.app-working-directory }}
-      run: wails build --platform ${{inputs.build-platform}} -webview2 ${{inputs.wails-build-webview2}} -nsis -o ${{inputs.build-name}}
+      run: wails build ${{inputs.custom-wail-flag}}  ${{inputs.windowsconsole}}  --platform ${{inputs.build-platform}} -webview2 ${{inputs.wails-build-webview2}} -nsis -o ${{inputs.build-name}}
       shell: bash
     - name: Add macOS perms
       if: inputs.build == 'true' && runner.os == 'macOS'
@@ -259,7 +268,7 @@ runs:
     - uses: actions/upload-artifact@v3
       if: inputs.package == 'true'
       with:
-        name: Wails Build ${{runner.os}} ${{inputs.build-name}}
+        name: Upload package ${{runner.os}} ${{inputs.build-name}}
         path: |
           */bin/
           *\bin\*
